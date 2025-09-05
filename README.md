@@ -17,12 +17,23 @@ Ce script permet de vérifier si une plage horaire donnée entre en conflit avec
 pip install -r requirements.txt
 ```
 
+## Informations de connexion
+
+Suite à un changement de l'université, l'accès à Capsule nécessite de se connecter avec Microsoft.
+
+1. Connectez-vous sur [capsule](https://capsuleweb.ulaval.ca/) dans votre navigateur.
+2. Récupérez le cookie `MRHSession` dans les outils développeurs (F12)
+![Cookie dans les outils développeurs](img/cookies.png)
+3. Récupérez l'agent utilisateur (User-Agent) de votre navigateur (plusieurs façons)
+![Recherche Google de mon agent utilisateur](img/ua.png)
+
+
 ## Utilisation
 ### Lancer le script
 
 Utilisez la commande suivante pour exécuter le script :
 ```bash
-python main.py -y <année> -s <semestre> -d <départements> -t <plage_horaire> -w <jour>
+python main.py -y <année> -s <semestre> -d <départements> -t <plage_horaire> -w <jour> -u <agent utilisateur> -c <cookie MRHSession>
 ```
 
 ### Arguments requis
@@ -31,12 +42,14 @@ python main.py -y <année> -s <semestre> -d <départements> -t <plage_horaire> -
 - -d, --departments : Liste des départements à analyser (par défaut : IFT et GLO).
 - -t, --time : Plage horaire choisie au format HH:MM - HH:MM (exemple : 18:00 - 21:00).
 - -w, --weekday : Jour de la semaine (L pour Lundi, M pour Mardi, R pour Mercredi, J pour Jeudi, V pour Vendredi).
+- -c, --cookie : Valeur du cookie MRHSession (32 caractères)
+- -u, --user-agent : User-Agent à utiliser pour les requêtes HTTP
 
 ## Exemple d'utilisation
 ### Vérifier les conflits pour un cours donné
 Pour vérifier si une plage horaire donnée est en conflit avec des cours de l'IFT et du GLO durant le trimestre d'hiver 2025 :
 ```bash
-python main.py -y 2025 -s 1 -d IFT GLO GIF -t "18:00 - 21:00" -w L
+python main.py -y 2025 -s 1 -d IFT GLO GIF -t "18:00 - 21:00" -w L -u 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36' -c 3912a352fea797b25c32c0c9a1bb4e5e
 ```
 
 ## Résultats
@@ -59,5 +72,5 @@ Conflit avec Gestion de projets informatiques : méthodes et outils - 21159 - GL
     - V : Vendredi
 - Semestre (-s) :
     - 1 : Hiver
-    - 3 : Été
+    - 5 : Été
     - 9 : Automne
