@@ -6,7 +6,7 @@ import re
 
 capsule_horraire_url = "https://capsuleweb.ulaval.ca/pls/etpr/bwckschd.p_get_crse_unsec"
 
-def fetch_course_data(url, year, semester, department):
+def fetch_course_data(url, year, semester, department, mrh_session_cookie, user_agent):
     data = [
         ("term_in", str(year) + str(semester).zfill(2)),
         ("sel_subj", "dummy"),
@@ -39,7 +39,14 @@ def fetch_course_data(url, year, semester, department):
         ("end_ap", "x")
     ]
         
-    response = requests.post(url, data=data)
+    cookies = {'MRHSession': mrh_session_cookie}
+    headers = {'User-Agent': user_agent}
+    response = requests.post(url, data=data, cookies=cookies, headers=headers)
+
+    if response.url.endswith("/my.logout.php3?errorcode=20"):
+        raise Exception(f"Session expirée. Veuillez obtenir un nouveau cookie MRHSession. (Code de statut: {response.status_code})")
+    
+    
     return response.text
 
 def parse_course_schedules(html):
@@ -89,20 +96,22 @@ def validate_time_range(value):
 def main():
     parser = argparse.ArgumentParser(
         description="Vérifiez si une plage horaire est en conflit avec des cours existants.",
-        epilog="Exemple d'utilisation : python script.py -y 2025 -s 1 -d IFT GLO -t '18:00 - 21:00' -w L"
+        epilog="Exemple d'utilisation : python script.py -y 2025 -s 1 -d IFT GLO -t '18:00 - 21:00' -w L -c 'a1b2c3d4e5f6789012345678901234ab' -u 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'"
     )
     parser.add_argument("-y", "--year", type=int, required=True, help="Année du trimestre")
     parser.add_argument("-s", "--semester", type=int, choices=[1, 5, 9], required=True, help="Semestre ('1' pour Hiver, '5' pour Été, '9' pour Automne)")
     parser.add_argument("-d", "--departments", nargs='+' ,type=str, default=["IFT", "GLO"], help="Liste de département (par défaut : 'IFT' 'GLO')")
     parser.add_argument("-t", "--time", type=validate_time_range, required=True, help="Plage horaire choisie ('18:00 - 21:00')")
     parser.add_argument("-w", "--weekday", type=str, choices=["L", "M", "R", "J", "V"], required=True, help="Jour choisi ('L' pour Lundi, 'M' pour Mardi, 'R' pour Mercredi, 'J' pour Jeudi, 'V' pour Vendredi)")
+    parser.add_argument("-c", "--cookie", type=str, required=True, help="Valeur du cookie MRHSession (32 caractères)")
+    parser.add_argument("-u", "--user-agent", type=str, required=True, help="User-Agent à utiliser pour les requêtes HTTP")
 
     args = parser.parse_args()
 
     all_schedules = []
 
     for department in args.departments:
-        html = fetch_course_data(capsule_horraire_url, args.year, args.semester, department)
+        html = fetch_course_data(capsule_horraire_url, args.year, args.semester, department, args.cookie, args.user_agent)
         schedules = parse_course_schedules(html)
         all_schedules.extend(schedules)
 
